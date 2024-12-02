@@ -30,6 +30,8 @@ from Lo.LOTotal import LO_Z_Total, LO_GAMMA_Total, LO_Z_GAMMA_Total
 #from Vertex.VertexCorrectionsTotal import totalVertex
 from Utilities.Utilities import Gev_minus_2_to_mbarns
 
+import pickle
+from matplotlib import cbook
     
 
 def templated_plot():
@@ -74,7 +76,22 @@ def templated_plot():
 
     #ax.plot(theta, LOVALEZ, label=r"$d\sigma^0_{\gamma Z}$", color='r')
    # ax.plot(theta, total, label=r"$d\sigma^0$", color='k')
-
+   
+    x1 = 170
+    x2 = 180
+    y1 = 0
+    y2 = 1.6
+    #ran args = # Position of inset: [left, bottom, width, height]
+    axins = ax.inset_axes([0.5, 0.5, 0.3, 0.3], xlim=(x1, x2), ylim=(y1, y2) )
+    
+    axins.plot(domain2, LOZ2, color='g')
+    axins.plot(domain2, LOgZ2, color='r')
+    axins.plot(domain2, LOg1, color='b')
+    #axins.plot(x, np.cos(x), label="cos(x)")
+    
+    # Highlight the region of interest on the main plot
+    ax.indicate_inset_zoom(axins, edgecolor="black")
+    
     ax.legend(
     loc='center right', 
     frameon=True,       
