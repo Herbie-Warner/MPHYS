@@ -17,7 +17,11 @@ from Core.Functions import xfunc,yfunc
 def sig_Z(s,t):
     pref = g**4/(32*np.pi)
     num = ztheta*s**2*xfunc(s,t)-8*vtheta**2*t**2
-    return pref*num/(256*ctheta**4*s*(-s+MZ**2)**2)
+    
+    den = (-s+MZ**2)*(-s+MZ**2).conjugate()
+    
+    
+    return pref*num/(256*ctheta**4*s*den)
 
 def sig_P(s,t):
     pref = g**4/(32*np.pi)
@@ -26,7 +30,9 @@ def sig_P(s,t):
 def sig_ZP(s,t):
     pref = -g**4/(32*np.pi)
     num = stheta**2*(vtheta**2*xfunc(s,t)+yfunc(s,t))
-    return pref*num/(4*ctheta**2*(-s+MZ**2))
+    den = np.sqrt((-s+MZ**2)*(-s+MZ**2).conjugate())
+    
+    return pref*num/(4*ctheta**2*den)
 
 def LeadingOrderTotal(s,t):
     return sig_Z(s,t)+sig_P(s,t)+sig_ZP(s,t)
@@ -38,4 +44,3 @@ def their_sig_z(s,t):
     
     AI = vtheta**2*stheta**2/ctheta**2 *s *xfunc(s,t) + stheta**2/(ctheta**2) * (s+2*t)
     return pref*AI
-

@@ -92,7 +92,7 @@ def s3(a,b,c,y0):
     
     return term1+term2 + inside
 
-import sys
+
 def C0(p1squared,p2squared,m1,m2,m3,p1dotp2):
 
     a = -HPC(p2squared)
@@ -127,6 +127,42 @@ def C0(p1squared,p2squared,m1,m2,m3,p1dotp2):
    
     
     return term1+term2+term3
+
+threshold_for_taylor = HPC('1e-6')
+def behaved_alpha_plus(a, b, c):
+    alpha_plus = (-b+gmpy2.sqrt(b**2-4*a*c))/(2*a)
+    
+    if abs(b**2) > abs(4*a*c):
+        condition = abs((4*a*c)/(b**2))< abs(threshold_for_taylor)
+        
+        alpha_plus = np.where(condition,
+                              -c/b, alpha_plus)
+        alpha = alpha_plus.item()
+    else:
+        condition = abs(b**2/(4*a*c)) < abs(threshold_for_taylor)
+        
+        alpha_plus = np.where(condition,
+                              (-b+HPC(1j)*gmpy2.sqrt(4*a*c)*(1-b**2/(8*a*c)))/(2*a),
+                              alpha_plus)
+        alpha = alpha_plus.item()
+        
+    if abs(a/b) < 1e-10:
+        alpha = -c/b
+    elif abs(b/a)< 1e-10:
+        alpha = gmpy2.sqrt(-c/a)
+    else:
+        pass
+    
+    return alpha
+
+
+def C0_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+
+    og = C0(p1squared, p2squared, m1, m2, m3, p1dotp2)
+    
+    alpha  = behaved_alpha_plus(p2squared, 2*p1dotp2, p1squared)
+    ir = -1/2 * alpha/((alpha**2-1)*m1**2) * gmpy2.log(alpha**2) * gmpy2.log(m2**2)
+    return og-ir
 
 def R1(p1squared,p2squared,m1,m2,m3,p1dotp2):
     p1squared = HPC(p1squared)
@@ -346,60 +382,208 @@ def C23_alt(p1squared,p2squared,m1,m2,m3,p1dotp2):
 
 
 
-"""
-def G_func(A, B, C, D, E, y_i):
-    
-    def interior(x):
-        term1 = gmpy2.log(y_i*(C*y_i+D)+E)
-        term2 = -gmpy2.log(A*(gmpy2.sqrt(D**2-4*C*E)+D)-2*B*C)
-        term3 = -gmpy2.log(A*(gmpy2.sqrt(D**2-4*C*E)-D)+2*B*C)
-        term4 = gmpy2.log(C)
-        term5 = 2*gmpy2.log(A)
-        term6 = -gmpy2.log(HPC(-1/4))
-        term7 = spence(-2*C*(A*x+B)/(A*(gmpy2.sqrt(D**2-4*C*E)+D)-2*B*C))
-        term8 = spence(2*C*(A*x+B)/(A*(gmpy2.sqrt(D**2-4*C*E)-D)+2*B*C))
-        tot = -1/A * ((term1 + term2 + term3 + term4 + term5 + term6)*gmpy2.log(abs(A*x+B)) + term7 + term8)
-        return tot
-    
-    total = interior(1) - interior(0)
-    return total.real
 
-import sys
-def C0(p1squared,p2squared,m1,m2,m3,p1dotp2):
 
-    a = -HPC(p2squared)
-   
- 
-    b = -HPC(p1squared)
-    c = -HPC(2*p1dotp2)
-  
-   
+
+
+
+#REG
+def R1_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2)
+    m3 = HPC(m3)
+    p1dotp2 = HPC(p1dotp2)
     
-    d = HPC(m2**2)-HPC(m3**2)-a
-    e = HPC(m1**2)-HPC(m2**2)+HPC(p1squared)+HPC(2*p1dotp2)
-    f = HPC(m3**2)
-  
-    a1,b1  =  behaved_quadratic_routes(b, c, a) 
+    f1 = m1**2-m2**2-p1squared
     
-    #print(b,c,a)
-    #print(a,b)
-    alpha = b1
-    y0 = -(d+e*alpha)/(c+2*alpha*b)
+    C0_val = C0_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    B013 = B0(p1squared,m1,m3)
+    B023 = B0(p2squared,m2,m3)
+    return 1/2 * (f1*C0_val + B013-B023)
+
+def R2_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2)
+    m3 = HPC(m3)
+    p1dotp2 = HPC(p1dotp2)
+    
+    f2 = m2**2-m3**2-p2squared - 2*p1dotp2
+    
+    C0_val = C0_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    B012 = B0(p1squared,m1,m2)
+    B013 = B0(p1squared,m1,m3)
+    return 1/2 * (f2*C0_val + B012-B013)
+
+def C11_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2)
+    m3 = HPC(m3)
+    p1dotp2 = HPC(p1dotp2)
+    
+    det = p1squared*p2squared - p1dotp2**2
+    
+    R1_val = R1_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    R2_val = R2_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    
+    return (1/det * (p2squared*R1_val-p1dotp2*R2_val)).real
+    
+
+def C12_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2)
+    m3 = HPC(m3)
+    p1dotp2 = HPC(p1dotp2)
+    
+    det = p1squared*p2squared - p1dotp2**2
+    
+    R1_val = R1_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    R2_val = R2_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    
+    return (1/det * (p1squared*R2_val-p1dotp2*R1_val)).real
+
+def C24_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2)
+    m3 = HPC(m3)
+    p1dotp2 = HPC(p1dotp2)
+    
+    f2 = m2**2-m3**2-p2squared - 2*p1dotp2
+    f1 = m1**2-m2**2-p1squared
+    
+    C0_val = C0_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    C11_val = C11_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    C12_val = C12_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)    
+    B0_23 = B0(p2squared,m2,m3)
+    
+    return (1/4 - 1/2*m1**2*C0_val + 1/4 * (B0_23-f1*C11_val-f2*C12_val)).real
+
+
+def R3_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2) 
+    m3 = HPC(m3) 
+    p1dotp2 = HPC(p1dotp2)
+    
+    f1 = m1**2-m2**2-p1squared
+     
+    C11_val = C11_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    C24_val = C24_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
     
     
-    y1 = y0+alpha
-    y2 = y0/(1-alpha)
-    y3 = -y0/alpha
+    B113 = B1(p1squared,m1,m3)
+    B023 = B0(p2squared,m2,m3)
 
-    term1 = G_func(c+2*alpha*b,d+e*alpha+2*a+c*alpha,b,c+e,a+d+f,y1)
-    term2 = G_func((c+2*alpha*b)*(1-alpha),d+e*alpha,a+b+c,e+d,f,y2)
-    term3 = G_func(-(c+2*alpha*b)*alpha,d+e*alpha,a,d,f,y3)
-    #print(term1,(1-alpha)*term2,alpha*term3)
-    return (term1 - (1-alpha)*term2 - alpha*term3).real
+    return 1/2*(f1*C11_val+B113+B023)-C24_val
 
-"""
-from Core.Quantities import MZ,ME,MGAMMA
 
-print(C24(-ME**2, -ME**2, MGAMMA*1e-20, MZ, MGAMMA*1e-20, 1e-5))
+def R4_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2) 
+    m3 = HPC(m3) 
+    p1dotp2 = HPC(p1dotp2)
+    
+    f1 = m1**2-m2**2-p1squared
+    
+    C12_val = C12_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+       
+    B113 = B1(p1squared,m1,m3)
+    B123 = B1(p2squared,m2,m3)
 
-print(-1/4 * (np.log(MZ**2)-0.5))
+    return 1/2*(f1*C12_val+B113-B123)
+
+
+def R5_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2) 
+    m3 = HPC(m3) 
+    p1dotp2 = HPC(p1dotp2)
+    
+    
+    f2 = m2**2-m3**2-p2squared - 2*p1dotp2  
+    C11_val = C11_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)   
+    B112 = B1(p1squared,m1,m2)
+    B113 = B1(p1squared,m1,m3)
+    return 1/2*(f2*C11_val+B112-B113)
+
+
+def R6_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2) 
+    m3 = HPC(m3) 
+    p1dotp2 = HPC(p1dotp2)
+    
+    
+    f2 = m2**2-m3**2-p2squared - 2*p1dotp2
+    
+    
+    C12_val = C12_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    C24_val = C24_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    
+    
+    B113 = B1(p1squared,m1,m3)
+
+    return 1/2*(f2*C12_val-B113)-C24_val
+
+def C21_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2) 
+    m3 = HPC(m3) 
+    p1dotp2 = HPC(p1dotp2)
+    
+    R3_val = R3_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    R5_val = R5_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    
+    det = p1squared*p2squared - p1dotp2**2
+    
+    return 1/det * (p2squared*R3_val-p1dotp2*R5_val)
+
+
+def C23_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2) 
+    m3 = HPC(m3) 
+    p1dotp2 = HPC(p1dotp2)
+    
+    R3_val = R3_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    R5_val = R5_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    
+    det = p1squared*p2squared - p1dotp2**2
+    
+    return 1/det * (p1squared*R5_val-p1dotp2*R3_val)
+
+def C22_reg(p1squared,p2squared,m1,m2,m3,p1dotp2):
+    p1squared = HPC(p1squared)
+    p2squared = HPC(p2squared)
+    m1 = HPC(m1)
+    m2 = HPC(m2) 
+    m3 = HPC(m3) 
+    p1dotp2 = HPC(p1dotp2)
+    
+    R4_val = R4_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    R6_val = R6_reg(p1squared,p2squared,m1,m2,m3,p1dotp2)
+    
+    det = p1squared*p2squared - p1dotp2**2
+    
+    return 1/det * (p2squared*R4_val-p1dotp2*R6_val)

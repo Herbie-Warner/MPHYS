@@ -10,7 +10,6 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import numpy as np
 from Core.Precision import HPC,behaved_quadratic_routes
 from Core.Quantities import DELTA
 
@@ -102,14 +101,3 @@ def dbl_deriv_B1(psquared,m1,m2):
     pref = 1/(psquared*(x1-x2))
     val = (1-x1)*F2(x1)-(1-x2)*F2(x2)
     return pref * val
-
-
-from Core.Quantities import MZ,ME,MMU
-
-MNEW = MMU*0.001
-
-print(B1(-MNEW**2,MNEW,MZ))
-print(1/2 * (np.log(MZ**2)-0.5))
-#print(-np.log(MZ**2))
-
-

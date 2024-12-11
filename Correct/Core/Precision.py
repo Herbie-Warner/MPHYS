@@ -77,16 +77,12 @@ def convert_gmpy_type(x):
 
         return None
     
-
-
 def behaved_quadratic_routes(a_n, b_n, c_n):
     a = HPC(a_n)
     b = HPC(b_n)
     c = HPC(c_n)
     
-    print(a)
-    print(b)
-    print(c)
+    
      
     alpha_plus = (-b+gmpy2.sqrt(b**2-4*a*c))/(2*a)
     
